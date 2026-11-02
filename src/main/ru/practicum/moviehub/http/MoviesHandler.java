@@ -23,10 +23,10 @@ public class MoviesHandler extends BaseHttpHandler {
     }
 
     @Override
-    public void handle(HttpExchange ex) throws IOException {
+    public void handle(HttpExchange ex) {
         try {
             String method = ex.getRequestMethod();
-            String parts[] = ex.getRequestURI().getPath().split("/");
+            String[] parts = ex.getRequestURI().getPath().split("/");
 
 
             if (parts.length == 2) {
