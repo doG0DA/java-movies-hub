@@ -18,7 +18,7 @@ public class MoviesHandler extends BaseHttpHandler {
     private final MoviesStore store;
 
 
-    public MoviesHandler(MoviesStore store) {
+    public MoviesHandler(MoviesStore store) throws IOException {
         this.store = store;
     }
 
@@ -45,14 +45,18 @@ public class MoviesHandler extends BaseHttpHandler {
                 sendError(ex, 404, "Неккоректный эндпоинт");
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            try {
+                sendError(ex, 401, "Неавторизованно");
+            } catch (IOException exc) {
+                throw new RuntimeException(exc);
+            }
 
         }
 
     }
 
 
-    public void handleGetById(HttpExchange httpExchange, String idSt) throws IOException {
+    private void handleGetById(HttpExchange httpExchange, String idSt) throws IOException {
         Optional<Integer> id = parseId(idSt);
 
         if (id.isEmpty()) {
@@ -68,7 +72,7 @@ public class MoviesHandler extends BaseHttpHandler {
         sendJson(httpExchange, 200, gson.toJson(movie.get()));
     }
 
-    public void handelGetAll(HttpExchange httpExchange) throws IOException {
+    private void handelGetAll(HttpExchange httpExchange) throws IOException {
         String query = httpExchange.getRequestURI().getQuery();
 
         if (query == null) {
@@ -95,7 +99,7 @@ public class MoviesHandler extends BaseHttpHandler {
         sendJson(httpExchange, 200, gson.toJson(store.getByYear(year)));
     }
 
-    public void deleteById(HttpExchange httpExchange, String idSt) throws IOException {
+    private void deleteById(HttpExchange httpExchange, String idSt) throws IOException {
         Optional<Integer> id = parseId(idSt);
 
         if (id.isEmpty()) {
@@ -112,7 +116,7 @@ public class MoviesHandler extends BaseHttpHandler {
         sendNoContent(httpExchange);
     }
 
-    public Optional<Integer> parseId(String id) {
+    private Optional<Integer> parseId(String id) {
         try {
             return Optional.of(Integer.parseInt(id));
         } catch (NumberFormatException e) {
@@ -120,7 +124,7 @@ public class MoviesHandler extends BaseHttpHandler {
         }
     }
 
-    protected void postHandle(HttpExchange httpExchange) throws IOException {
+    private void postHandle(HttpExchange httpExchange) throws IOException {
         String contentType = httpExchange.getRequestHeaders().getFirst("Content-Type");
 
         if (contentType == null || !contentType.startsWith("application/json")) {
@@ -128,8 +132,10 @@ public class MoviesHandler extends BaseHttpHandler {
             return;
         }
 
-        InputStream inputStream = httpExchange.getRequestBody();
-        String body = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
+        String body;
+        try (InputStream inputStream = httpExchange.getRequestBody()) {
+            body = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
+        }
 
         Movie movie;
         try {
@@ -156,7 +162,7 @@ public class MoviesHandler extends BaseHttpHandler {
 
     }
 
-    public List<String> validate(Movie movie) {
+    private List<String> validate(Movie movie) {
         List<String> errors = new ArrayList<>();
         int maxYear = Year.now().getValue() + 1;
 

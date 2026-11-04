@@ -8,12 +8,9 @@ import java.net.InetSocketAddress;
 
 public class MoviesServer {
     private final HttpServer server;
-    private MoviesStore store;
-    private int port;
+
 
     public MoviesServer(MoviesStore store, int port) {
-        this.store = store;
-        this.port = port;
         try {
             server = HttpServer.create(new InetSocketAddress(port), 0);
             server.createContext("/movies", new MoviesHandler(store));
@@ -23,9 +20,6 @@ public class MoviesServer {
         }
     }
 
-    public MoviesStore getStore() {
-        return store;
-    }
 
     public void start() {
         server.start();
